@@ -35,11 +35,24 @@ export const calculateBezierPoint = (t: number, bezier: Bezier) =>
     return { x, y };
 }
 
-export const getTileBezier = (point: Point, path: Path, renderContext: RenderContext): Bezier =>
-{
+export const getTileBezier = (point: Point, path: Path, renderContext: RenderContext): Bezier => {
     return [
         getTileOffset(point, path.start, renderContext),
         getTileCenter(point, renderContext),
         getTileOffset(point, path.end, renderContext)
     ];
+}
+
+export const getCornerBezier = (point: Point, rising: boolean, renderContext: RenderContext): Bezier => {
+    // cos/sin 45deg ~= 0.707, 1-0.707 = 0.293
+    const length = 0.293 * renderContext.tileSize / 2;
+    const midX = (point.x + 0.5) * renderContext.tileSize;
+    const midY = (point.y + 0.5) * renderContext.tileSize;
+    const yMult = rising ? -1 : 1;
+
+    return [
+        { x: midX - length, y: midY - length * yMult },
+        { x: midX, y: midY },
+        { x: midX + length, y: midY + length * yMult },
+    ]
 }

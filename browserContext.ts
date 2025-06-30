@@ -1,4 +1,5 @@
 export interface BrowserContext {
+    boardContext: CanvasRenderingContext2D;
     tileContext: CanvasRenderingContext2D;
     moverContext: CanvasRenderingContext2D;
 }
@@ -14,6 +15,7 @@ export function getBrowserContext()
     if(!instance)
     {
         instance = {
+            boardContext: getCanvas('board-canvas'),
             tileContext: getCanvas('tile-canvas'),
             moverContext: getCanvas('mover-canvas'),
         }
