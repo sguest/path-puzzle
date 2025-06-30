@@ -8,3 +8,8 @@ export enum Direction {
     North = 6,
     NorthEast = 7,
 }
+
+export const rotate = (angle: Direction, amount: number = 1) =>
+{
+    return ((angle % 8) + amount + 8) % 8;
+}

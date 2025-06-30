@@ -1,14 +1,15 @@
-import type { Direction } from './Direction';
+import { rotate, type Direction } from './Direction';
 import type { Path } from './Path';
 
-const rotate = (angle: number, amount: number = 1) =>
-{
-    return ((angle % 8) + amount + 8) % 8;
-}
+
 
 export class Tile {
-    constructor(private rotation: Direction, private _paths: Path[])
+    constructor(private _rotation: Direction, private _paths: Path[])
     {
+    }
+
+    public get rotation() {
+        return this._rotation;
     }
 
     public get paths(): Path[]
@@ -21,6 +22,6 @@ export class Tile {
 
     public rotate(amount: number = 1)
     {
-        this.rotation = rotate(this.rotation, amount);
+        this._rotation = rotate(this.rotation, amount);
     }
 }

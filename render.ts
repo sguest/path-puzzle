@@ -1,9 +1,11 @@
 import { calculateBezierPoint, getCornerBezier, getTileBezier, getTileCenter, getTileOffset } from './coordinates';
-import { Direction } from './Direction';
+import { Direction, rotate } from './Direction';
+import { EndTile } from './EndTile';
 import type { Grid } from './Grid';
 import { MoverType, type Mover } from './Mover';
-import type { Bezier } from './Point';
+import type { Bezier, Point } from './Point';
 import type { RenderContext } from './RenderContext';
+import { StartTile } from './StartTile';
 import type { Tile } from './Tile';
 
 const clearCanvas = (context: CanvasRenderingContext2D) =>
@@ -42,26 +44,88 @@ export const drawBoard = (width: number, height: number, canvasContext: CanvasRe
     canvasContext.stroke();
 }
 
+const drawTileShape = (tilePosition: Point, points: { direction: Direction, distance: number}[], canvasContext: CanvasRenderingContext2D, renderContext: RenderContext) =>
+{
+    let drawPoints = points.map(p => getTileOffset(tilePosition, p.direction, renderContext, p.distance));
+
+    const lastPoint = drawPoints[drawPoints.length - 1];
+    canvasContext.beginPath();
+    canvasContext.moveTo(lastPoint.x, lastPoint.y);
+
+    for(let point of drawPoints) {
+        canvasContext.lineTo(point.x, point.y);
+    }
+    const firstPoint = drawPoints[0];
+    canvasContext.lineTo(firstPoint.x, firstPoint.y);
+    canvasContext.stroke();
+}
+
 export const drawTiles = (tiles: Grid<Tile>, canvasContext: CanvasRenderingContext2D, renderContext: RenderContext) =>
 {
-    canvasContext.fillStyle = '#ccc';
-
     clearCanvas(canvasContext);
-    for(let tile of tiles) {
-        const center = getTileCenter(tile, renderContext);
+    for(let {x, y, item } of tiles) {
+        const tile = item;
+        const point = { x, y };
+        if(tile instanceof StartTile || tile instanceof EndTile)
+        {
+            canvasContext.fillStyle = tile.moverColour
+        }
+        else
+        {
+            canvasContext.fillStyle = '#ccc';
+        }
+        const center = getTileCenter(point, renderContext);
         canvasContext.beginPath();
         canvasContext.arc(center.x, center.y, renderContext.tileSize / 2, 0, Math.PI * 2)
         canvasContext.fill();
+
+        if(tile instanceof StartTile)
+        {
+            canvasContext.strokeStyle = '#555';
+            canvasContext.lineWidth = 4;
+            drawTileShape(point, [
+                { direction: tile.rotation,  distance: 0.9},
+                { direction: rotate(tile.rotation, 1.5), distance: 0.6 },
+                { direction: rotate(tile.rotation, 6.5), distance: 0.6 },
+            ], canvasContext, renderContext);
+        }
+
+        if(tile instanceof EndTile)
+        {
+            canvasContext.strokeStyle = '#555';
+            canvasContext.lineWidth = 4;
+            drawTileShape(point, [
+                { direction: rotate(tile.rotation, 2),  distance: 0.2},
+                { direction: rotate(tile.rotation, 2.7), distance: 0.8 },
+                { direction: rotate(tile.rotation, 1.3), distance: 0.8 },
+            ], canvasContext, renderContext);
+            drawTileShape(point, [
+                { direction: rotate(tile.rotation, 6),  distance: 0.2},
+                { direction: rotate(tile.rotation, 6.7), distance: 0.8 },
+                { direction: rotate(tile.rotation, 5.3), distance: 0.8 },
+            ], canvasContext, renderContext);
+        }
     }
 
+    canvasContext.strokeStyle = '#000'
     canvasContext.lineWidth = 3;
     canvasContext.beginPath();
-    for(let tile of tiles) {
-        for(let path of tile.item.paths)
+    for(let { x, y, item } of tiles) {
+        const tile = item;
+        const point = { x, y };
+        for(let path of tile.paths)
         {
-            const start = getTileOffset(tile, path.start, renderContext);
-            const mid = getTileCenter(tile, renderContext);
-            const end = getTileOffset(tile, path.end, renderContext);
+            let start = getTileOffset(point, path.start, renderContext);
+            const mid = getTileCenter(point, renderContext);
+            let end = getTileOffset(point, path.end, renderContext);
+            if(tile instanceof StartTile)
+            {
+                start = mid;
+            }
+            if(tile instanceof EndTile)
+            {
+                end = mid;
+            }
             canvasContext.moveTo(start.x, start.y);
             canvasContext.bezierCurveTo(start.x, start.y, mid.x, mid.y, end.x, end.y);
         }
@@ -101,8 +165,11 @@ export const drawMovers = (movers: Mover[], tiles: Grid<Tile>, canvasContext: Ca
             const position = calculateBezierPoint(pathProgress, bezier)
             canvasContext.beginPath();
             canvasContext.fillStyle = '#f00';
+            canvasContext.strokeStyle = '#000';
+            canvasContext.lineWidth = 2;
             canvasContext.arc(position.x, position.y, 10, 0, Math.PI * 2)
             canvasContext.fill();
+            canvasContext.stroke();
         }
     }
 }

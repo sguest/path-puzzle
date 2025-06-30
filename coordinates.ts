@@ -10,12 +10,12 @@ export const getTileCenter = (point: Point, renderContext: RenderContext) => {
     }
 }
 
-export const getTileOffset = (point: Point, rotation: number, renderContext: RenderContext) => {
+export const getTileOffset = (point: Point, rotation: Direction, renderContext: RenderContext, offsetScale: number = 1) => {
     const center = getTileCenter(point, renderContext);
     const angle = rotation * Math.PI / 4;
     return {
-        x: center.x + Math.cos(angle) * renderContext.tileSize / 2,
-        y: center.y + Math.sin(angle) * renderContext.tileSize / 2,
+        x: center.x + Math.cos(angle) * renderContext.tileSize * offsetScale / 2,
+        y: center.y + Math.sin(angle) * renderContext.tileSize * offsetScale / 2,
     }
 }
 

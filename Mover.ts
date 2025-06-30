@@ -6,18 +6,20 @@ export enum MoverType {
     Corner,
 }
 
-export interface TileMover {
-    type: MoverType.Tile;
+interface MoverBase {
     gridPosition: Point;
-    pathIndex: number;
     pathProgress: number;
+    isMoving: boolean;
+}
+
+export interface TileMover extends MoverBase {
+    type: MoverType.Tile;
+    pathIndex: number;
     pathDirection: boolean;
 }
 
-export interface CornerMover {
+export interface CornerMover extends MoverBase {
     type: MoverType.Corner;
-    gridPosition: Point;
-    pathProgress: number;
     direction: Direction;
 }
 

@@ -7,23 +7,28 @@ import { drawBoard, drawMovers, drawTiles } from './render';
 import { Direction } from './Direction';
 import { cornerExits, ExitType, tileExits } from './transitions';
 import { cornerLength } from './coordinates';
+import { StartTile } from './StartTile';
+import { EndTile } from './EndTile';
 
 const tiles = new Grid<Tile>(8, 6);
 
-tiles.set(0, 0, new Tile(Direction.East, [{start: Direction.South, end: Direction.North}, { start: Direction.NorthWest, end: 0}]));
-tiles.set(1, 0, new Tile(Direction.SouthEast, [{start: Direction.SouthWest, end: Direction.SouthEast}]));
-tiles.set(0, 1, new Tile(Direction.East, [{start: Direction.East, end: Direction.North}]));
-tiles.set(1, 1, new Tile(Direction.West, [{start: Direction.South, end: Direction.NorthEast}, { start: Direction.East, end: Direction.NorthWest}]));
-tiles.set(0, 2, new Tile(Direction.East, [{start: Direction.NorthEast, end: Direction.SouthEast}]));
-tiles.set(1, 3, new Tile(Direction.East, [{start: Direction.NorthWest, end: Direction.NorthEast}]));
-tiles.set(2, 2, new Tile(Direction.East, [{start: Direction.SouthWest, end: Direction.NorthWest}]));
+tiles.set(0, 0, new StartTile(Direction.SouthEast, '#f00'))
+tiles.set(1, 0, new EndTile(Direction.South, '#f00'))
+tiles.set(1, 1, new Tile(Direction.East, [{start: Direction.South, end: Direction.North}, { start: Direction.NorthWest, end: Direction.East}]));
+tiles.set(2, 1, new Tile(Direction.SouthEast, [{start: Direction.SouthWest, end: Direction.SouthEast}]));
+tiles.set(1, 2, new Tile(Direction.East, [{start: Direction.East, end: Direction.North}]));
+tiles.set(2, 2, new Tile(Direction.West, [{start: Direction.South, end: Direction.NorthEast}, { start: Direction.East, end: Direction.NorthWest}]));
+tiles.set(1, 3, new Tile(Direction.East, [{start: Direction.NorthEast, end: Direction.SouthEast}]));
+tiles.set(2, 4, new Tile(Direction.East, [{start: Direction.NorthWest, end: Direction.NorthEast}]));
+tiles.set(3, 3, new Tile(Direction.East, [{start: Direction.SouthWest, end: Direction.NorthWest}]));
 
 const mover = {
     type: MoverType.Tile,
     gridPosition: { x: 0, y: 0},
-    pathIndex: 1,
-    pathProgress: 0,
+    pathIndex: 0,
+    pathProgress: 0.5,
     pathDirection: true,
+    isMoving: true,
 } as Mover;
 
 const browserContext = getBrowserContext();
@@ -41,7 +46,8 @@ const enterTile = (mover: Mover, target: Point, entryPoint: number) => {
     const tile = tiles.get(target.x, target.y);
     if(!tile)
     {
-        throw new Error("End of path");
+        mover.isMoving = false;
+        return false;
     }
 
     let found = false;
@@ -58,14 +64,18 @@ const enterTile = (mover: Mover, target: Point, entryPoint: number) => {
     });
 
     if(!found) {
-        console.log(mover, target, entryPoint);
-        throw new Error("End of path");
+        mover.isMoving = false;
+        return false;
     }
+
+    return true;
 }
 
-const frame = (elapsed: number) => {
-    const delta = elapsed - time;
-    time = elapsed;
+const updateMover = (delta: number) => {
+    if(!mover.isMoving)
+    {
+        return;
+    }
 
     let frameAnimationRate = animationRate;
 
@@ -75,18 +85,27 @@ const frame = (elapsed: number) => {
 
     mover.pathProgress += (delta / frameAnimationRate);
 
+    if(mover.type === MoverType.Tile)
+    {
+        let tile = tiles.get(mover.gridPosition.x, mover.gridPosition.y);
+        if(tile instanceof EndTile && mover.pathProgress >= 0.5)
+        {
+            mover.pathProgress = 0.5;
+            mover.isMoving = false;
+            return;
+        }
+    }
+
     if(mover.pathProgress >= 1)
     {
-        mover.pathProgress -= 1;
-
         if(mover.type === MoverType.Tile)
         {
             let tile = tiles.get(mover.gridPosition.x, mover.gridPosition.y);
             if(!tile)
             {
-                throw new Error("Invalid tile");
+                mover.isMoving = false;
+                return;
             }
-
             let path = tile.paths[mover.pathIndex];
 
             const end = mover.pathDirection ? path.end : path.start;
@@ -95,14 +114,18 @@ const frame = (elapsed: number) => {
             if(exit.type === ExitType.Tile)
             {
                 const target = addPoint(mover.gridPosition, exit);
-                enterTile(mover, target, exit.direction);
+                if(!enterTile(mover, target, exit.direction))
+                {
+                    return;
+                }
             }
             else
             {
                 const target = addPoint(mover.gridPosition, exit);
                 if(target.x < 1 || target.y < 1 || target.x > tiles.width || target.y > tiles.height)
                 {
-                    throw new Error("End of path");
+                    mover.isMoving = false;
+                    return;
                 }
                 const cornerMover = mover as unknown as CornerMover;
                 cornerMover.type = MoverType.Corner;
@@ -114,9 +137,21 @@ const frame = (elapsed: number) => {
         {
             const exit = cornerExits[mover.direction];
             const target = addPoint(mover.gridPosition, exit);
-            enterTile(mover, target, exit.direction);
+            if(!enterTile(mover, target, exit.direction))
+            {
+                return;
+            }
         }
+
+        mover.pathProgress -= 1;
     }
+}
+
+const frame = (elapsed: number) => {
+    const delta = elapsed - time;
+    time = elapsed;
+
+    updateMover(delta);
 
     drawMovers([mover], tiles, browserContext.moverContext, renderContext);
 
