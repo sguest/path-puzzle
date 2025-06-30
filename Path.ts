@@ -1,4 +1,6 @@
+import type { Direction } from './Direction';
+
 export interface Path {
-    start: number;
-    end: number;
+    start: Direction;
+    end: Direction;
 }

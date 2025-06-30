@@ -1,4 +1,5 @@
 import { calculateBezierPoint, getCornerBezier, getTileBezier, getTileCenter, getTileOffset } from './coordinates';
+import { Direction } from './Direction';
 import type { Grid } from './Grid';
 import { MoverType, type Mover } from './Mover';
 import type { Bezier } from './Point';
@@ -30,10 +31,10 @@ export const drawBoard = (width: number, height: number, canvasContext: CanvasRe
     for(let x = 1; x < width; x++) {
         for(let y = 1; y < height; y++)
         {
-            let bezier = getCornerBezier({ x, y }, false, renderContext);
+            let bezier = getCornerBezier({ x, y }, Direction.NorthWest, renderContext);
             canvasContext.moveTo(bezier[0].x, bezier[0].y);
             canvasContext.lineTo(bezier[2].x, bezier[2].y);
-            bezier = getCornerBezier({ x, y }, true, renderContext);
+            bezier = getCornerBezier({ x, y }, Direction.SouthWest, renderContext);
             canvasContext.moveTo(bezier[0].x, bezier[0].y);
             canvasContext.lineTo(bezier[2].x, bezier[2].y);
         }
@@ -75,6 +76,7 @@ export const drawMovers = (movers: Mover[], tiles: Grid<Tile>, canvasContext: Ca
     for(let mover of movers)
     {
         let bezier: Bezier | undefined;
+        let pathProgress = mover.pathProgress;
 
         if(mover.type === MoverType.Tile)
         {
@@ -83,16 +85,19 @@ export const drawMovers = (movers: Mover[], tiles: Grid<Tile>, canvasContext: Ca
             {
                 const path = tile.paths[mover.pathIndex];
                 bezier = getTileBezier(mover.gridPosition, path, renderContext);
+                if(!mover.pathDirection)
+                {
+                    pathProgress = 1 - pathProgress;
+                }
             }
         }
         else
         {
-            bezier = getCornerBezier(mover.gridPosition, mover.pathIndex === 1, renderContext);
+            bezier = getCornerBezier(mover.gridPosition, mover.direction, renderContext);
         }
 
         if(bezier)
         {
-            const pathProgress = mover.pathDirection ? mover.pathProgress : 1 - mover.pathProgress;
             const position = calculateBezierPoint(pathProgress, bezier)
             canvasContext.beginPath();
             canvasContext.fillStyle = '#f00';

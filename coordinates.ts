@@ -1,3 +1,4 @@
+import { Direction } from './Direction';
 import type { Path } from './Path';
 import type { Bezier, Point } from './Point';
 import type { RenderContext } from './RenderContext';
@@ -43,16 +44,31 @@ export const getTileBezier = (point: Point, path: Path, renderContext: RenderCon
     ];
 }
 
-export const getCornerBezier = (point: Point, rising: boolean, renderContext: RenderContext): Bezier => {
-    // cos/sin 45deg ~= 0.707, 1-0.707 = 0.293
-    const length = 0.293 * renderContext.tileSize / 2;
+const directionMap: {[key: number]: { rising: boolean, reverse: boolean }} = {
+    [Direction.NorthWest]: { rising: false, reverse: true },
+    [Direction.NorthEast]: { rising: true, reverse: false },
+    [Direction.SouthWest]: { rising: true, reverse: true },
+    [Direction.SouthEast]: { rising: false, reverse: false },
+}
+
+export const cornerLength = (1 - Math.cos(Math.PI / 4)) / 2;
+
+export const getCornerBezier = (point: Point, direction: Direction, renderContext: RenderContext): Bezier => {
+    const length = cornerLength * renderContext.tileSize;
     const midX = (point.x + 0.5) * renderContext.tileSize;
     const midY = (point.y + 0.5) * renderContext.tileSize;
-    const yMult = rising ? -1 : 1;
+    const delta = directionMap[direction];
+    const yMult = delta.rising ? -1 : 1;
 
-    return [
+    let bezier: Bezier = [
         { x: midX - length, y: midY - length * yMult },
         { x: midX, y: midY },
         { x: midX + length, y: midY + length * yMult },
     ]
+
+    if(delta.reverse) {
+        bezier = [bezier[2], bezier[1], bezier[0]];
+    }
+
+    return bezier;
 }

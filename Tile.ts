@@ -1,3 +1,4 @@
+import type { Direction } from './Direction';
 import type { Path } from './Path';
 
 const rotate = (angle: number, amount: number = 1) =>
@@ -6,7 +7,7 @@ const rotate = (angle: number, amount: number = 1) =>
 }
 
 export class Tile {
-    constructor(private rotation: number, private _paths: Path[])
+    constructor(private rotation: Direction, private _paths: Path[])
     {
     }
 
