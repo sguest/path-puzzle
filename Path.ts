@@ -1,4 +1,4 @@
-export default interface Path {
+export interface Path {
     start: number;
     end: number;
 }

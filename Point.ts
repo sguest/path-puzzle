@@ -3,6 +3,8 @@ export interface Point {
     y: number;
 }
 
+export type Bezier = [Point, Point, Point];
+
 export const addPoint = (a: Point, b: Point) => {
     return {
         x: a.x + b.x,
