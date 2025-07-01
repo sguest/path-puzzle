@@ -142,14 +142,14 @@ export const drawMovers = (movers: Mover[], tiles: Grid<Tile>, canvasContext: Ca
         let bezier: Bezier | undefined;
         let pathProgress = mover.pathProgress;
 
-        if(mover.type === MoverType.Tile)
+        if(mover.location.type === MoverType.Tile)
         {
-            const tile = tiles.get(mover.gridPosition.x, mover.gridPosition.y);
+            const tile = tiles.get(mover.location.gridPosition.x, mover.location.gridPosition.y);
             if(tile)
             {
-                const path = tile.paths[mover.pathIndex];
-                bezier = getTileBezier(mover.gridPosition, path, renderContext);
-                if(!mover.pathDirection)
+                const path = tile.paths[mover.location.pathIndex];
+                bezier = getTileBezier(mover.location.gridPosition, path, renderContext);
+                if(!mover.location.pathDirection)
                 {
                     pathProgress = 1 - pathProgress;
                 }
@@ -157,14 +157,14 @@ export const drawMovers = (movers: Mover[], tiles: Grid<Tile>, canvasContext: Ca
         }
         else
         {
-            bezier = getCornerBezier(mover.gridPosition, mover.direction, renderContext);
+            bezier = getCornerBezier(mover.location.gridPosition, mover.location.direction, renderContext);
         }
 
         if(bezier)
         {
             const position = calculateBezierPoint(pathProgress, bezier)
             canvasContext.beginPath();
-            canvasContext.fillStyle = '#f00';
+            canvasContext.fillStyle = mover.colour;
             canvasContext.strokeStyle = '#000';
             canvasContext.lineWidth = 2;
             canvasContext.arc(position.x, position.y, 10, 0, Math.PI * 2)

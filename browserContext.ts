@@ -2,6 +2,7 @@ export interface BrowserContext {
     boardContext: CanvasRenderingContext2D;
     tileContext: CanvasRenderingContext2D;
     moverContext: CanvasRenderingContext2D;
+    goButton: HTMLButtonElement;
 }
 
 let instance: BrowserContext | undefined = undefined;
@@ -18,6 +19,7 @@ export function getBrowserContext()
             boardContext: getCanvas('board-canvas'),
             tileContext: getCanvas('tile-canvas'),
             moverContext: getCanvas('mover-canvas'),
+            goButton: document.querySelector<HTMLButtonElement>('#go-button')!,
         }
     }
 
